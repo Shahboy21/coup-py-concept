@@ -1,0 +1,6 @@
+Goal 1: Create rough fundamental building blocks for the games
+Goal 2: Make the game "playable" as if you were playing for all players via text
+
+List of Roles: Ambassador, Assassin, Captain, Contessa, Duke
+List of Actions: Income, Foreign Aid, Coup, Tax, Assassinate, Exchange, Steal
+CounterActions: Block Steal, Block Assassination, Block Foreign Aid, Challange Role
