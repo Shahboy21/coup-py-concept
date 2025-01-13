@@ -214,22 +214,39 @@ def steal(origin:Player, target:Player):
 
 #Claiming Assassin
 def assassinate(origin:Player, target:Player):
-    pass
+    """Origin player pays 3 coins to cause target player to lose influence.
+    This can only be done if the origin player is claiming they are an ASSASSIN.
+    This action is BLOCKABLE by someone claiming CONTESSA.
+    """
+    if origin.bal >= 3:
+        origin.increment_bal(-3)
+        lose_influence(target)
+    else:
+        pass #TODO: Handle error case where this was an invalid action
 
-#Claiming Contessa
-def block_assination(origin:Player):
-    pass
 
 #Claim Ambassador
-def exchange_roles(origin:Player):
-    pass
+def exchange_roles(origin:Player, game_deck:Deck):
+    """Origin player draws two roles from the deck and returns any two that they have to the deck. The deck is then shuffled.
+    This action can only be done if the origin player is claiming they are an AMBASSADOR.
+    
+    Revealed roles cannot be exchanged (except when revealed to confirm a challenge). 
+    """
+    origin.active_roles.append(game_deck.draw())
+    origin.active_roles.append(game_deck.draw())
+    for i in [0,1]:
+        message = add_enumerated_options(f'Player {origin.id} which role would you like to return?', origin.active_roles)
+        selected_role_num = validate_response(message, list(range(len(origin.active_roles))))
+        game_deck.return_card(origin.remove_role(selected_role_num))
+    game_deck.shuffle_cards()
+
 
 def challenge_last_action(defendant:Player, prosecutor:Player, role:Card) -> bool:
     """ Returns true if the defending player does not have the role required for their claimed action. 
     
     When the defendant does have the correct role. The prosecutor loses an influence and the dendant replaces that role.
     """
-    pos = defendant.find_claim(role)
+    pos = defendant.find_claim(role) #TODO: FINISH Functionality
     if  pos > -1: 
         print(f'Player {defendant.id} was an {role.name}! Player {prosecutor.id} lost the challenge...') #BROADCAST
         
@@ -242,6 +259,16 @@ def challenge_last_action(defendant:Player, prosecutor:Player, role:Card) -> boo
         #Choose card to reveal and broad cast that info
         return True
     
-
+def add_enumerated_options(message:str, options:list[str]) -> str:
+    """Given an input message, adds all items in a user friendly selection format and returns the resulting string.
+    Format is as follows:
+    index) Item
+    index2) Item 2
+    etc...
+    """
+    output = message
+    for index, item in enumerate(options):
+        message += f'{index}) {item}'
+    return output
 
 
