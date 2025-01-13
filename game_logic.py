@@ -201,11 +201,16 @@ def take_tax(origin:Player) -> None:
     
 #Claiming Captain
 def steal(origin:Player, target:Player):
-    pass
-
-#Claiming Captain or Ambassador
-def block_theft(origin:Player, target:Player, claim: Card):
-    pass
+    """Origin player takes two coins from the target player.
+    This can only be done if the origin player is claiming they are a CAPTAIN.
+    This action is BLOCKABLE by someone claiming CAPTAIN or AMBASSADOR.
+    """
+    if target.bal >= 2:
+        origin.increment_bal(2)
+        target.increment_bal(-2)
+    else:
+        origin.increment_bal(target.bal)
+        target.increment_bal(-1*target.bal)
 
 #Claiming Assassin
 def assassinate(origin:Player, target:Player):
