@@ -266,9 +266,9 @@ def add_enumerated_options(message:str, options:list[str]) -> str:
     index2) Item 2
     etc...
     """
-    output = message
+    output = message.rstrip() + '\n'
     for index, item in enumerate(options):
-        message += f'{index}) {item}'
+        message += f'{index}) {item}\n'
     return output
-
+    #TODO: Replace enumerating lists elsewhere in the existing code with this function
 
