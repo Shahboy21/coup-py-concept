@@ -146,15 +146,37 @@ def validate_response(msg:str, valid_responses: list[str]) -> str:
         output = input(msg)
     return output
     
-
-def print_board_status():
-    pass
-
-def lose_influence(subject:Player):
-    pass    
     
-def launch_coup(origin:Player, target: Player):
+def print_board_status(): #TODO: Finish me
     pass
+
+def lose_influence(target:Player) -> None:
+    if not target.alive:
+        print(f'Player {target} is already dead... was this an error?')
+        return None
+    elif len(target.active_roles) == 1:
+        lost_role_num = 0
+    else:
+        message = f'Player {target.id} which of your cards will you give up?\n' 
+        for num, role in enumerate(target.active_roles):
+            message += f'{num}) {role}'
+        lost_role_num = validate_response(message, valid_responses=list(range(len(target.active_roles))))
+    lost_role = target.reveal_role(lost_role_num)
+    print(f'Player {target.id } was a {lost_role}!')
+    if not target.alive:
+        print(f'Unfortunately, that was Player {target.id}\'s last role and they are now out of the game!')
+    
+    
+def launch_coup(origin:Player, target: Player) -> None:
+    """ The origin player causes the target player to lose influence after paying 7 coins.
+    Target player gets to chose which card they lose if they have more than one role.
+    
+    origin: Player launching the coup and paying 7 coins
+    target: Player deciding which role to lose.
+    """
+    origin.increment_bal(-7)
+    lose_influence(target)
+
 
 def take_income(origin:Player):
     pass
