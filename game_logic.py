@@ -179,19 +179,26 @@ def launch_coup(origin:Player, target: Player) -> None:
 
 
 def take_income(origin:Player):
+    """Origin player gains one coin."""
+    origin.increment_bal(increment=1)
     pass
+
 
 def take_foreign_aid(origin:Player):
+    """Origin player gains two coins.
+    This action is BLOCKABLE by someone claiming DUKE.
+    """
+    origin.increment_bal(increment=2)
     pass
+
 
 #Claiming Duke
-def take_tax(origin:Player):
-    pass
-
-#Claiming Duke, origin is the player that is blocking the aid. Target is the one attempting to take foreign aid.
-def block_foreign_aid(origin:Player, target:Player): 
-    pass
-
+def take_tax(origin:Player) -> None:
+    """Origin player gains three coins.
+    This can only be done if the origin player is claiming they are a DUKE.
+    """
+    origin.increment_bal(increment=3)
+    
 #Claiming Captain
 def steal(origin:Player, target:Player):
     pass
