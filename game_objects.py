@@ -36,18 +36,18 @@ class Deck:
         self.reset_deck()
     
     def draw(self) -> Card:
-        '''Draws the top card from the deck of cards and returns it.'''
+        """Draws the top card from the deck of cards and returns it."""
         try:
             return self.deck.pop()
         except IndexError as e:
-            raise IndexError("The deck of cards is empty before drawing. This is an impossible gamestate for normal gameplay. Something went wrong")
+            raise IndexError('The deck of cards is empty before drawing. This is an impossible gamestate for normal gameplay. Something went wrong.')
         
-    def shuffle_cards(self):
-        '''Shuffles the deck of cards in place.'''
+    def shuffle_cards(self) -> None:
+        """Shuffles the deck of cards in place."""
         if len(self.deck) > 0:
             shuffle(self.deck)
     
-    def reset_deck(self):
+    def reset_deck(self) -> None:
         self.deck = []
         self.deck.extend([Card.AMBASSADOR]*3)
         self.deck.extend([Card.ASSASSIN]*3)
@@ -56,6 +56,9 @@ class Deck:
         self.deck.extend([Card.DUKE]*3)
         self.shuffle_cards()
         
+    def return_card(self, card: Card)-> None:
+        """Returns the given card to the end of the deck."""
+        self.deck.insert(0,card)
 
 class Player:
     #Hidden information
@@ -110,12 +113,16 @@ class Player:
         
         If there are no active_roles the player is out of the game, but their roles are still revealed to everyone else in the game.
         '''
-        assert pos < len(self.active_roles), "Invalid position for the number of active roles."
-        role = self._active_roles.pop(pos)
+        role = self.remove_role(pos)
         self._revealed_roles.append(role)
         if len(self.active_roles) == 0:
             self._alive = False
         return role 
+    
+    def remove_role(self, pos:int) -> Card:
+        """Removes the role in the position provided from active roles. And returns the removed role."""
+        assert -1 < pos < len(self.active_roles), "Invalid position for the number of active roles."
+        return self._active_roles.pop(pos)
     
     def replace_role(self, pos:int, new_role:Card):
         '''Replaces the role in the provided position with the new role.'''
