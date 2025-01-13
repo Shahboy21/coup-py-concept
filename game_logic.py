@@ -85,15 +85,22 @@ def start_game(num_players = 3):
             # Check for blocks if needed
             blocked, successfully_blocked = False, False
             if action in BLOCKABLE_ACTIONS and (not end_turn):
-                for p in challengers:
+                for p in challengers: #FIXME: Clean up action blocking to make more clear which role is being claimed before asking for input
                     choice = validate_response(f'Player {p.id} would you like to block the action (Y/N)?',['Y','N']) 
                     if choice.capitalize == 'Y':
+                        blocked = True
                         blocking_action = BLOCKED_ACTION_MAP[action]
                         claimed_role = CLAIM_MAP(blocking_action)[0] 
                         if blocking_action == Actions.DENY_THEFT:
                             claim_choice = validate_response("To block stealing do you claim: 0) Captain or 1) Ambassador?", ['0','1'])
                             claimed_role = CLAIM_MAP[blocking_action][claim_choice] 
-                        blocked = True
+                        elif blocking_action == Actions.DENY_AID:
+                            claimed_role = CLAIM_MAP[blocking_action][0]
+                        elif blocking_action == Actions.ASSASSINATE:
+                            claimed_role = CLAIM_MAP[blocking_action][0]
+                        else:
+                            pass #TODO: Implemeent INVALID GAME STATE
+                            
                         
                         # Check for block counter challenges
                         counter_players: list[Player] = [main_player] + [c for c in challengers if c != p]
