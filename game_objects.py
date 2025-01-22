@@ -95,9 +95,16 @@ class Player:
     @property
     def revealed_roles(self) -> list[Card]:
         return self._revealed_roles
-       
+    
+    def __str__(self) -> str:
+        return self.id
+    
     def increment_bal(self, increment:int) -> int:
-        '''Increments the balance by the given parameter and returns the final balance.'''
+        '''Increments the balance by the given parameter and returns the final balance.
+        Raises ValueError if the result of the increment would be negative.
+        '''
+        if self.bal + increment < 0: 
+            raise ValueError("Increment would cause negative balance... Illegal action taken?")
         self._bal += int(increment)
         return self._bal
     
