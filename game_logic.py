@@ -59,101 +59,97 @@ def run_game(num_players = 3):
 
         if not main_player.alive: continue
         challengers: list[Player] = [p for p in turn_queue if p.alive]
-        if main_player.alive:
             
-            #Start turn 
-            #TODO: Add a seperate broadcast message function. These represent messages that everyone can see during gameplay if choices were hidden.
-            print(f"It is Player {main_player.id}'s turn! They have {main_player.bal} coins.") # BROADCAST
+        #Start turn 
+        #TODO: Add a seperate broadcast message function. These represent messages that everyone can see during gameplay if choices were hidden.
+        print(f"It is Player {main_player}'s turn! They have {main_player.bal} coins.") # BROADCAST
+        
+        #Pick Action
+        available_actions = main_player.get_available_actions()
+        action_str = add_enumerated_options("What would you like to do from the following list:\n", available_actions)          
+        desired_action = validate_response(action_str, list(range(len(available_actions))))
+        
+        action: Actions = available_actions[int(desired_action)]
+        target: Player = None
+        targets = [p for p in all_players if p.alive and p != main_player]
+        #Determine target if needed
+        targetted_action:bool = action in REQUIRES_TARGET                           
+        if targetted_action:
+            target_str = add_enumerated_options("Which player would you like to target: \n", [p.id for p in targets])
+            target_player_index:int = validate_response(target_str, list(range(len(targets))))
+            target = targets[int(target_player_index)]
+        
+        # Announce Action 
+        announcement = f"Player {main_player} will {action.value} " #FIXME: Change for better action text.
+        if targetted_action: announcement += f" from Player {target}!"
+        print(announcement) # BROADCAST
             
-            #Pick Action
-            action_str = f"What would you like to do from the following list:\n"
-            action_map: dict[int,Actions] = dict(enumerate(main_player.get_available_actions()))
-            for key,action in action_map:
-                action_str += f"{key}) {action.value}\n"
-                desired_action = validate_response(action_str, list(action_map.keys()))
-            
-            action:Actions = action_map(desired_action)
-            
-            #Determine target if needed
-            targetted_action:bool = action in REQUIRES_TARGET                           
-            if targetted_action:
-                valid_targets: dict[int, Player] = dict(enumerate(challengers))
-                target_str = "Which player would you like to target from: \n"
-                for target_index,target in valid_targets:
-                    target_str += f"{target_index}) Player {target.id}\n"
-                target_player_index:int = validate_response(target_str, list(valid_targets.keys()))
-                target = valid_targets[target_player_index]
-            
-            # Announce Action 
-            announcement = f"Player {main_player.id} will {action.value} "
-            if targetted_action: announcement += f" from Player {target.id}!"
-            print(announcement) # BROADCAST
-                     
-            end_turn = False
-            # Check for challenges
-            if action not in UNCHALLANGED_ACTIONS:
-                claimed_role: Card = CLAIM_MAP[action][0] 
-                for p in challengers:
-                    choice = validate_response(f'Player {p.id} would you like to challenge (Y/N)?', ['Y','N'])
-                    if choice.capitalize == 'Y':
-                        end_turn = challenge_last_action(main_player, p, claimed_role) # On challenge if main_player does not have the proper role, the turn ends.                         
-                        break # After the first challenge no more challenges need to be checked
-            
-            # Check for blocks if needed
-            blocked, successfully_blocked = False, False
-            if action in BLOCKABLE_ACTIONS and (not end_turn):
-                for p in challengers: #FIXME: Clean up action blocking to make more clear which role is being claimed before asking for input
-                    choice = validate_response(f'Player {p.id} would you like to block the action (Y/N)?',['Y','N']) 
-                    if choice.capitalize == 'Y':
-                        blocked = True
-                        blocking_action = BLOCKED_ACTION_MAP[action]
-                        claimed_role = CLAIM_MAP(blocking_action)[0] 
-                        if blocking_action == Actions.DENY_THEFT:
-                            claim_choice = validate_response("To block stealing do you claim: 0) Captain or 1) Ambassador?", ['0','1'])
-                            claimed_role = CLAIM_MAP[blocking_action][claim_choice] 
-                        elif blocking_action == Actions.DENY_AID:
-                            claimed_role = CLAIM_MAP[blocking_action][0]
-                        elif blocking_action == Actions.ASSASSINATE:
-                            claimed_role = CLAIM_MAP[blocking_action][0]
-                        else:
-                            pass #TODO: Implemeent INVALID GAME STATE
-                            
+        # Check for challenges         
+        end_turn = False #Flag for premature turn ending
+        
+        if action not in UNCHALLANGED_ACTIONS:
+            claimed_role: Card = CLAIM_MAP[action][0] 
+            end_turn = challenge_loop(main_player, challengers, claimed_role)  
+        if end_turn: 
+            turn_queue = [p for p in turn_queue+[main_player] if p.alive]
+            continue #Move to NEXT PLAYER
+        
+        # Check for blocks if needed
+        blocked, blocking_player = False, target
+        if target.alive and action in BLOCKABLE_ACTIONS and action != Actions.FOREIGN_AID: #Foreign aid everyone has the chance to block
+            choice = validate_response(f'Player {blocking_player} would you like to block the action (Y/N)?',['Y','N']) 
+            if choice.capitalize() == 'Y':
+                blocked = True
+                blocking_action = BLOCKED_ACTION_MAP[action]
+                if blocking_action == Actions.DENY_THEFT:
+                    claim_choice = validate_response("To block stealing do you claim: 0) Captain or 1) Ambassador?", ['0','1'])
+                    claimed_role = CLAIM_MAP[blocking_action][int(claim_choice)] 
+                #elif blocking_action == Actions.DENY_AID: Cannot happen with new condition
+                #    claimed_role = CLAIM_MAP[blocking_action][0]
+                elif blocking_action == Actions.DENY_ASSASSINATION:
+                    claimed_role = CLAIM_MAP[blocking_action][0]
+                else:
+                    pass #TODO: Implement INVALID GAME STATE
+        elif target.alive and action == Actions.FOREIGN_AID:
+            for blocking_player in targets:
+                choice = validate_response(f'Player {blocking_player} would you like to block the action (Y/N)?',['Y','N'])
+                if choice.capitalize() == 'Y':
+                    blocked = True
+                    blocking_action = Actions.DENY_AID
+                    claimed_role = CLAIM_MAP[blocking_action][0]
+                    break
                         
-                        # Check for block counter challenges
-                        counter_players: list[Player] = [main_player] + [c for c in challengers if c != p]
-                        for counter_p in counter_players:
-                            counter = validate_response(f'Player {counter_p.id}, player {p.id} is claiming they are a {claimed_role}! would you like to challenge the block (Y/N)?', ['Y','N'])
-                            
-                            if counter.capitalize =='Y':
-                                #TODO: Complete CHALLENGE function
-                                successfully_blocked = not challenge_last_action(p, counter_p,claimed_role)
-                                if not successfully_blocked: blocked = False
-                                break  # After the first challenge no more challenges need to be checked
-                        
-                        if successfully_blocked:
-                            break # No need to go check if other players want to block
-                        
-            if not blocked and not successfully_blocked:
-                #Resolve Action
-                pass #TODO: Call appropriate function based on action
+        if blocked:
+            counter_chal_players: list[Player] = [main_player] + [c for c in challengers if c != blocking_player]                     
+            blocked = challenge_loop(blocking_player, counter_chal_players, claimed_role)        
+                                    
+        if not blocked and not end_turn:
             
-            turn_queue.append(main_player)
-            
+            #Resolve Action for main player
+            match action:
+                case Actions.COUP:
+                    launch_coup(origin=main_player, target=target)
+                case Actions.INCOME:
+                    take_income(main_player)
+                case Actions.FOREIGN_AID:
+                    take_foreign_aid(main_player)
+                case Actions.TAX:
+                    take_tax(main_player)
+                case Actions.STEAL:
+                    steal(origin=main_player, target=target)
+                case Actions.EXCHANGE:
+                    exchange_roles(main_player, game_deck)
+                case Actions.ASSASSINATE:
+                    assassinate(origin=main_player, target=target)
+                case _:
+                    pass
+                    #Raise Exception      
+                          
+        turn_queue = [p for p in turn_queue+[main_player] if p.alive]
     
-    #Create deck
-    #Create Players
-    #Start turn 1
-    # Declare Action
-    # Check for Challenges and Resolve
-    # If no challenges or Proven Valid correct
-    # Check for Blocks
-    # Check for Blocker Challenges and Resolve
-    # If no blockers or valid blocker Resolve action
-    
-    #Next Turn
-    #Check if player is alive, remove from queues if dead
-    
-    pass
+    print('**************************')
+    print(f'Player {turn_queue.pop()} is the winner!')
+    print('**************************')
 
 def validate_response(msg:str, valid_responses: list[str]) -> str:
     """ Takes an input message and continues taking inputs until a response from valid_responses is given."""
@@ -175,14 +171,12 @@ def lose_influence(target:Player) -> None:
     elif len(target.active_roles) == 1:
         lost_role_num = 0
     else:
-        message = f'Player {target.id} which of your cards will you give up?\n' 
-        for num, role in enumerate(target.active_roles):
-            message += f'{num}) {role}'
-        lost_role_num = validate_response(message, valid_responses=list(range(len(target.active_roles))))
-    lost_role = target.reveal_role(lost_role_num)
-    print(f'Player {target.id } was a {lost_role}!')
+        message = add_enumerated_options(f'Player {target} which of your cards will you give up?\n', target.active_roles) 
+        lost_role_num = validate_response(message, valid_responses=['0','1'])
+    lost_role = target.reveal_role(int(lost_role_num))
+    print(f'Player {target} was a {lost_role}!')
     if not target.alive:
-        print(f'Unfortunately, that was Player {target.id}\'s last role and they are now out of the game!')
+        print(f'Unfortunately, that was Player {target}\'s last role and they are now out of the game!')
     
     
 def launch_coup(origin:Player, target: Player) -> None:
@@ -280,3 +274,5 @@ def add_enumerated_options(message:str, options:list[str]) -> str:
         output += f'{index}) {item}\n'
     return output
 
+if __name__ == '__main__':
+    run_game(3)
