@@ -22,9 +22,26 @@ BLOCKED_ACTION_MAP: dict[Actions,Actions] = {
     Actions.STEAL: Actions.DENY_THEFT
 }
 
-def start_game(num_players = 3):
+def run_game(num_players = 3):
     assert 3 <= num_players <= 6, "Game supports 3-6 players currently."
     #Special mode needed for 2 players, expansion required for more players by default
+    
+    def challenge_loop(defendant: Player, potential_challengers: list[Player], claimed_role: Card) -> bool:
+        """Handles the game text input and output when checking for claimed role challenges.
+        
+        Returns True if the defendant lost the challenge and their turn ends without the action going through. False otherwise.
+        """
+        print(f'Player {defendant} is claiming they are a {claimed_role.name}.')
+        for challenger in potential_challengers:
+            choice = validate_response(f'Player {challenger} would you like to challenge (Y/N)?', ['Y','N'])
+            if choice.capitalize() == 'Y':
+                losing_player = challenge_role_loser(defendant, challenger, claimed_role) 
+                if defendant.id == losing_player.id: print(f'Player {defendant} was not a {claimed_role.name}!') #BROADCAST
+                else: print(f'Player {defendant} was a {claimed_role.name}! Unfortunate for you Player {challenger}.')
+                lose_influence(losing_player)
+                # On challenge if main_player does not have the proper role, the turn ends.     
+                end_turn:bool = (defendant.id == losing_player.id) or not defendant.alive
+                return end_turn
     
     game_deck = Deck()
     game_deck.shuffle_cards()
@@ -32,13 +49,12 @@ def start_game(num_players = 3):
     turn_queue: list[Player] = []
     
     # FIXME: Currently this doesn't follow standard card dealing order 
-    num_alive = num_players
     for i in range(num_players):
         all_players.append(Player(id = str(i+1), first_role=game_deck.draw(), second_role=game_deck.draw()))
         turn_queue = all_players.copy() 
         
     #Main game loop
-    while num_alive > 1:
+    while len(turn_queue) > 1:
         main_player:Player = turn_queue.pop(0)
 
         if not main_player.alive: continue
