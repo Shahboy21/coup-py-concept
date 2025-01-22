@@ -140,13 +140,14 @@ def start_game(num_players = 3):
     pass
 
 def validate_response(msg:str, valid_responses: list[str]) -> str:
-    """Takes an input message continues asking until a response from valid_responses is given."""
-    output:str = input(msg)
-    while output not in valid_responses:
-        print(f'Please enter a valid response from one of: {valid_responses}...')
-        output = input(msg)
+    """ Takes an input message and continues taking inputs until a response from valid_responses is given."""
+    str_valid_responses = [str(resp) for resp in valid_responses]
+    output:str = input(msg.strip()+'\n')
+    while output not in str_valid_responses:
+        print(f'Please enter a valid response from one of: {str_valid_responses}...')
+        output = input(msg.strip()+'\n')
     return output
-    
+  
     
 def print_board_status(): #TODO: Finish me
     pass
@@ -180,29 +181,28 @@ def launch_coup(origin:Player, target: Player) -> None:
 
 
 def take_income(origin:Player):
-    """Origin player gains one coin."""
+    """ Origin player gains one coin."""
     origin.increment_bal(increment=1)
-    pass
 
 
 def take_foreign_aid(origin:Player):
-    """Origin player gains two coins.
+    """ Origin player gains two coins.
     This action is BLOCKABLE by someone claiming DUKE.
     """
     origin.increment_bal(increment=2)
-    pass
 
 
 #Claiming Duke
 def take_tax(origin:Player) -> None:
-    """Origin player gains three coins.
+    """ Origin player gains three coins.
     This can only be done if the origin player is claiming they are a DUKE.
     """
     origin.increment_bal(increment=3)
-    
+
+
 #Claiming Captain
 def steal(origin:Player, target:Player):
-    """Origin player takes two coins from the target player.
+    """ Origin player takes two coins from the target player.
     This can only be done if the origin player is claiming they are a CAPTAIN.
     This action is BLOCKABLE by someone claiming CAPTAIN or AMBASSADOR.
     """
@@ -213,22 +213,22 @@ def steal(origin:Player, target:Player):
         origin.increment_bal(target.bal)
         target.increment_bal(-1*target.bal)
 
+
 #Claiming Assassin
 def assassinate(origin:Player, target:Player):
-    """Origin player pays 3 coins to cause target player to lose influence.
+    """ Origin player pays 3 coins to cause target player to lose influence.
     This can only be done if the origin player is claiming they are an ASSASSIN.
     This action is BLOCKABLE by someone claiming CONTESSA.
     """
-    if origin.bal >= 3:
-        origin.increment_bal(-3)
-        lose_influence(target)
-    else:
-        pass #TODO: Handle error case where this was an invalid action
+    try: origin.increment_bal(-3)
+    except ValueError as e:
+        raise ValueError(f"Player {origin} cannot afford to assissinate. Illegal game action taken.") from e
+    lose_influence(target)
 
 
 #Claim Ambassador
 def exchange_roles(origin:Player, game_deck:Deck):
-    """Origin player draws two roles from the deck and returns any two that they have to the deck. The deck is then shuffled.
+    """ Origin player draws two roles from the deck and returns any two that they have to the deck. The deck is then shuffled.
     This action can only be done if the origin player is claiming they are an AMBASSADOR.
     
     Revealed roles cannot be exchanged (except when revealed to confirm a challenge). 
@@ -236,32 +236,24 @@ def exchange_roles(origin:Player, game_deck:Deck):
     origin.active_roles.append(game_deck.draw())
     origin.active_roles.append(game_deck.draw())
     for i in [0,1]:
-        message = add_enumerated_options(f'Player {origin.id} which role would you like to return?', origin.active_roles)
+        message = add_enumerated_options(f'Player {origin} which role would you like to return?', origin.active_roles)
         selected_role_num = validate_response(message, list(range(len(origin.active_roles))))
-        game_deck.return_card(origin.remove_role(selected_role_num))
+        game_deck.return_card(origin.remove_role(int(selected_role_num)))
     game_deck.shuffle_cards()
 
 
-def challenge_last_action(defendant:Player, prosecutor:Player, role:Card) -> bool:
-    """ Returns true if the defending player does not have the role required for their claimed action. 
-    
-    When the defendant does have the correct role. The prosecutor loses an influence and the dendant replaces that role.
+def challenge_role_loser(defendant:Player, prosecutor:Player, role:Card) -> Player:
+    """ Returns the losing player of the challenge based on if the defendant has the input role. 
+    If the defendant has the input role, the prosecutor is the losing player. 
+    If not, the defendant is the losing player.
     """
     pos = defendant.find_claim(role) #TODO: FINISH Functionality
-    if  pos > -1: 
-        print(f'Player {defendant.id} was an {role.name}! Player {prosecutor.id} lost the challenge...') #BROADCAST
-        
-        #Replace the revealed role
-        
-        #prosecutor chooses a card to reveal and broadcast that information.
-        return False
-    else:
-        print(f'Player {defendant.id} was not an {role.name}!') #BROADCAST
-        #Choose card to reveal and broad cast that info
-        return True
+    if pos > -1: return prosecutor
+    else: return defendant
+
     
 def add_enumerated_options(message:str, options:list[str]) -> str:
-    """Given an input message, adds all items in a user friendly selection format and returns the resulting string.
+    """ Given an input message, adds all items in a user friendly selection format and returns the resulting string.
     Format is as follows:
     index) Item
     index2) Item 2
@@ -269,7 +261,6 @@ def add_enumerated_options(message:str, options:list[str]) -> str:
     """
     output = message.rstrip() + '\n'
     for index, item in enumerate(options):
-        message += f'{index}) {item}\n'
+        output += f'{index}) {item}\n'
     return output
-    #TODO: Replace enumerating lists elsewhere in the existing code with this function
 
