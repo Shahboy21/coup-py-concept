@@ -3,7 +3,7 @@
 from game_objects import Card, Deck, Player, Actions
 
 REQUIRES_TARGET: list[Actions] = [Actions.ASSASSINATE, Actions.COUP, Actions.STEAL]
-UNCHALLANGED_ACTIONS: list[Actions] = [Actions.INCOME, Actions.COUP]
+UNCHALLANGED_ACTIONS: list[Actions] = [Actions.INCOME, Actions.FOREIGN_AID, Actions.COUP]
 BLOCKABLE_ACTIONS: list[Actions] = [Actions.FOREIGN_AID, Actions.ASSASSINATE, Actions.STEAL]
 
 CLAIM_MAP: dict[Actions:list[Card]] = {
@@ -34,13 +34,14 @@ def start_game(num_players = 3):
     # FIXME: Currently this doesn't follow standard card dealing order 
     num_alive = num_players
     for i in range(num_players):
-        all_players.append(Player(id = i+1, first_role=game_deck.draw(), second_role=game_deck.draw()))
+        all_players.append(Player(id = str(i+1), first_role=game_deck.draw(), second_role=game_deck.draw()))
         turn_queue = all_players.copy() 
-    
-    
+        
     #Main game loop
     while num_alive > 1:
         main_player:Player = turn_queue.pop(0)
+
+        if not main_player.alive: continue
         challengers: list[Player] = [p for p in turn_queue if p.alive]
         if main_player.alive:
             
