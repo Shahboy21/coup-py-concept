@@ -110,7 +110,16 @@ def run_game(num_players = 3):
         
         # Check for blocks if needed
         blocked, blocking_player = False, target
-        if target.alive and action in BLOCKABLE_ACTIONS and action != Actions.FOREIGN_AID: #Foreign aid everyone has the chance to block
+        if action == Actions.FOREIGN_AID: #Foreign aid everyone has the chance to block
+            for blocking_player in targets:
+                choice = validate_response(f'Player {blocking_player} would you like to block the action (Y/N)?',['Y','N'])
+                if choice.capitalize() == 'Y':
+                    blocked = True
+                    blocking_action = Actions.DENY_AID
+                    claimed_role = CLAIM_MAP[blocking_action][0]
+                    break    
+                            
+        elif action in BLOCKABLE_ACTIONS and targetted_action and target.alive:
             choice = validate_response(f'Player {blocking_player} would you like to block the action (Y/N)?',['Y','N']) 
             if choice.capitalize() == 'Y':
                 blocked = True
@@ -124,18 +133,10 @@ def run_game(num_players = 3):
                     claimed_role = CLAIM_MAP[blocking_action][0]
                 else:
                     pass #TODO: Implement INVALID GAME STATE
-        elif target.alive and action == Actions.FOREIGN_AID:
-            for blocking_player in targets:
-                choice = validate_response(f'Player {blocking_player} would you like to block the action (Y/N)?',['Y','N'])
-                if choice.capitalize() == 'Y':
-                    blocked = True
-                    blocking_action = Actions.DENY_AID
-                    claimed_role = CLAIM_MAP[blocking_action][0]
-                    break
-                        
+                            
         if blocked:
             counter_chal_players: list[Player] = [main_player] + [c for c in challengers if c != blocking_player]                     
-            blocked = challenge_loop(blocking_player, counter_chal_players, claimed_role)        
+            blocked = not challenge_loop(blocking_player, counter_chal_players, claimed_role)        
                                     
         if not blocked and not end_turn:
             #Resolve Action for main player
