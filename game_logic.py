@@ -80,7 +80,7 @@ def run_game(num_players = 3):
         
         #Pick Action
         available_actions = main_player.get_available_actions()
-        action_str = add_enumerated_options("What would you like to do from the following list:\n", available_actions)          
+        action_str = add_enumerated_options("What would you like to do from the following list:\n", [a.name for a in available_actions])          
         desired_action = validate_response(action_str, list(range(len(available_actions))))
         
         action: Actions = available_actions[int(desired_action)]
@@ -138,7 +138,6 @@ def run_game(num_players = 3):
             blocked = challenge_loop(blocking_player, counter_chal_players, claimed_role)        
                                     
         if not blocked and not end_turn:
-            
             #Resolve Action for main player
             match action:
                 case Actions.COUP:
@@ -185,7 +184,7 @@ def lose_influence(target:Player) -> None:
         message = add_enumerated_options(f'Player {target} which of your cards will you give up?\n', target.active_roles) 
         lost_role_num = validate_response(message, valid_responses=['0','1'])
     lost_role = target.reveal_role(int(lost_role_num))
-    print(f'Player {target} was a {lost_role}!')
+    print(f'Player {target} was a {lost_role.name}!')
     if not target.alive:
         print(f'Unfortunately, that was Player {target}\'s last role and they are now out of the game!')
     
@@ -257,7 +256,7 @@ def exchange_roles(origin:Player, game_deck:Deck):
     origin.active_roles.append(game_deck.draw())
     origin.active_roles.append(game_deck.draw())
     for i in [0,1]:
-        message = add_enumerated_options(f'Player {origin} which role would you like to return?', origin.active_roles)
+        message = add_enumerated_options(f'Player {origin} which role would you like to return?', [a.name for a in origin.active_roles])
         selected_role_num = validate_response(message, list(range(len(origin.active_roles))))
         game_deck.return_card(origin.remove_role(int(selected_role_num)))
     game_deck.shuffle_cards()
