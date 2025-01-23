@@ -48,12 +48,20 @@ def run_game(num_players = 3):
     game_deck.shuffle_cards()
     all_players: list[Player] = []
     turn_queue: list[Player] = []
-    
+    def print_board_status(debug_mode = False): #TODO: Finish me for in game use
+        for player in all_players:
+            print(f"Player {player}'s status:")
+            print(f"Balance: {player.bal}")
+            print(f"Revealed Roles: {player.revealed_roles}")
+            if debug_mode: print(f"Active Roles: {player.active_roles}")
+        print(game_deck.deck)
+        
     # FIXME: Currently this doesn't follow standard card dealing order 
     for i in range(num_players):
         all_players.append(Player(id = str(i+1), first_role=game_deck.draw(), second_role=game_deck.draw()))
         turn_queue = all_players.copy() 
-        
+    
+    print_board_status(True) 
     #Main game loop
     while len(turn_queue) > 1:
         main_player:Player = turn_queue.pop(0)
