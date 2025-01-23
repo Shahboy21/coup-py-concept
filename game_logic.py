@@ -21,7 +21,7 @@ BLOCKED_ACTION_MAP: dict[Actions,Actions] = {
     Actions.ASSASSINATE: Actions.DENY_ASSASSINATION,
     Actions.STEAL: Actions.DENY_THEFT
 }
-
+SEPERATOR = '**********************'
 def run_game(num_players = 3):
     assert 3 <= num_players <= 6, "Game supports 3-6 players currently."
     #Special mode needed for 2 players, expansion required for more players by default
@@ -40,8 +40,9 @@ def run_game(num_players = 3):
                 else: print(f'Player {defendant} was a {claimed_role.name}! Unfortunate for you Player {challenger}.')
                 lose_influence(losing_player)
                 # On challenge if main_player does not have the proper role, the turn ends.     
-                end_turn:bool = (defendant.id == losing_player.id) or not defendant.alive
-                return end_turn
+                liar_caught:bool = (defendant.id == losing_player.id) or not defendant.alive
+                return liar_caught
+        return False
     
     game_deck = Deck()
     game_deck.shuffle_cards()
