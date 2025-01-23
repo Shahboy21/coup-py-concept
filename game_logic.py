@@ -63,7 +63,12 @@ def run_game(num_players = 3):
             
         #Start turn 
         #TODO: Add a seperate broadcast message function. These represent messages that everyone can see during gameplay if choices were hidden.
+        print(SEPERATOR)
         print(f"It is Player {main_player}'s turn! They have {main_player.bal} coins.") # BROADCAST
+        print(SEPERATOR)
+        print(f"Player {main_player} your current roles are:")
+        for i in range(len(main_player.active_roles)): print(main_player.active_roles[i].name)
+        print(SEPERATOR)
         
         #Pick Action
         available_actions = main_player.get_available_actions()
@@ -148,9 +153,9 @@ def run_game(num_players = 3):
                           
         turn_queue = [p for p in turn_queue+[main_player] if p.alive]
     
-    print('**************************')
+    print(SEPERATOR)
     print(f'Player {turn_queue.pop()} is the winner!')
-    print('**************************')
+    print(SEPERATOR)
 
 def validate_response(msg:str, valid_responses: list[str]) -> str:
     """ Takes an input message and continues taking inputs until a response from valid_responses is given."""
@@ -161,9 +166,6 @@ def validate_response(msg:str, valid_responses: list[str]) -> str:
         output = input(msg.strip()+'\n')
     return output
   
-    
-def print_board_status(): #TODO: Finish me
-    pass
 
 def lose_influence(target:Player) -> None:
     if not target.alive:
